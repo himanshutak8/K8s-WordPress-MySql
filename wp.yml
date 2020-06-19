@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: Service
+metadata:
+       name: wp-svc
+       labels:
+           app: wordpress
+spec:
+        ports:
+          - port: 80
+            targetPort: 80
+        selector:
+            env: wpprod
+        type: NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+        name: wp-deploy
+spec:
+        replicas: 2
+        selector:
+           matchLabels:
+                env: wpprod
+        template:
+           metadata:
+              name: wp-pod
+              labels:
+                env: wpprod
+           spec:
+              volumes:
+              - name: myvol
+                persistentVolumeClaim:
+                        claimName: wp-pvc
+              containers:
+              - name: wpcont
+                image: wordpress:5.1.1-php7.3-apache
+                volumeMounts:
+                 - name: myvol
+                   mountPath: /var/www/html
+                env:
+                 - name: WORDPRESS_DB_HOST
+                   value: mysql-svc
+                 - name: WORDPRESS_DB_PASSWORD
+                   valueFrom:
+                     secretKeyRef:
+                        name: myvault 
+                        key: rootdbpass
+
+
+
+
